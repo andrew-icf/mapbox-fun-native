@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@rnmapbox/maps": "^10.3.7",
+    "@turf/turf": "^7.4.0",
     "expo": "~54.0.36",
     "expo-dev-client": "~6.0.21",
     "expo-location": "~19.0.8",
