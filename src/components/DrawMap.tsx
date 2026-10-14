@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Mapbox from '@rnmapbox/maps';
 import * as turf from '@turf/turf';
@@ -10,11 +11,33 @@ type Drawing = Feature<LineString | Polygon, DrawingProps>;
 
 const COLORS: DrawingProps = { lineColor: '#2563eb', fillColor: '#2563eb' };
 const PREVIEW_COLOR = '#f97316';
+const STORAGE_KEY = 'user_drawings';
 
 export default function DrawMap() {
   const [mode, setMode] = useState<DrawMode>('polygon');
   const [points, setPoints] = useState<Position[]>([]);
   const [drawings, setDrawings] = useState<Drawing[]>([]);
+
+  const [loaded, setLoaded] = useState(false);
+
+  // Load saved drawings once when the component mounts
+  useEffect(() => {
+  AsyncStorage.getItem(STORAGE_KEY)
+      .then((saved) => {
+      if (saved) setDrawings(JSON.parse(saved));
+     })
+      .catch((error) => console.warn('Failed to load drawings', error))
+      .finally(() => setLoaded(true));
+  }, []);
+
+  // Save whenever drawings change, but only after the initial load
+  useEffect(() => {
+  if (!loaded) return;
+  const save = drawings.length
+      ? AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(drawings))
+      : AsyncStorage.removeItem(STORAGE_KEY);
+  save.catch((error) => console.warn('Failed to save drawings', error));
+  }, [drawings, loaded]);
 
   const minPoints = mode === 'line' ? 2 : 3;
   const canFinish = points.length >= minPoints;
@@ -107,7 +130,7 @@ export default function DrawMap() {
             ? `Tap to add points (${points.length} so far)`
             : `Tap the map to start a ${mode}`}
         </Text>
-        <Text style={styles.panelValue}>{Math.round(totals.area).toLocaleString()} sq meters</Text>
+        <Text style={styles.panelValue}>{(totals.area / 2_589_988).toFixed(2)} sq miles</Text>
         <Text style={styles.panelValue}>{totals.miles.toFixed(2)} miles of lines</Text>
       </View>
     </View>
