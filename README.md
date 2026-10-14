@@ -10,9 +10,9 @@ Work in progress.
 
 - [x] Expo project with a custom development build
 - [x] Native Mapbox map rendering on iOS
-- [ ] Draw polygons and lines with tap gestures
-- [ ] Area and length calculations with Turf
-- [ ] Persist drawings on device
+- [x] Draw polygons and lines with tap gestures
+- [x] Area and length calculations with Turf
+- [x] Persist drawings on device
 - [ ] Show the user's current location
 - [ ] Run on Android
 - [ ] Upgrade to the latest Expo SDK
