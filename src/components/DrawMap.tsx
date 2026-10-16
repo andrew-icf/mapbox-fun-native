@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import Mapbox from '@rnmapbox/maps';
+import Mapbox, { type Camera } from '@rnmapbox/maps';
 import * as turf from '@turf/turf';
 import type { Feature, FeatureCollection, LineString, Polygon, Position } from 'geojson';
+import CountryInfo, { type Country } from './CountryInfo';
 
 type DrawMode = 'line' | 'polygon';
 type DrawingProps = { lineColor: string; fillColor: string };
@@ -17,8 +18,17 @@ export default function DrawMap() {
   const [mode, setMode] = useState<DrawMode>('polygon');
   const [points, setPoints] = useState<Position[]>([]);
   const [drawings, setDrawings] = useState<Drawing[]>([]);
-
   const [loaded, setLoaded] = useState(false);
+  const cameraRef = useRef<Camera>(null);
+
+  const flyToCountry = (country: Country) => {
+    cameraRef.current?.setCamera({
+      centerCoordinate: country.center,
+      zoomLevel: country.zoom,
+      animationDuration: 1500,
+      animationMode: 'flyTo',
+    });
+  };
 
   // Load saved drawings once when the component mounts
   useEffect(() => {
@@ -91,7 +101,10 @@ export default function DrawMap() {
   return (
     <View style={styles.container}>
       <Mapbox.MapView style={styles.map} onPress={handleMapPress}>
-        <Mapbox.Camera zoomLevel={12} centerCoordinate={[-104.99, 39.74]} />
+        <Mapbox.Camera
+          ref={cameraRef}
+          defaultSettings={{ zoomLevel: 12, centerCoordinate: [-104.99, 39.74] }}
+        />
         <Mapbox.ShapeSource id="drawings" shape={shape}>
           <Mapbox.FillLayer
             id="drawings-fill"
@@ -132,6 +145,7 @@ export default function DrawMap() {
         </Text>
         <Text style={styles.panelValue}>{(totals.area / 2_589_988).toFixed(2)} sq miles</Text>
         <Text style={styles.panelValue}>{totals.miles.toFixed(2)} miles of lines</Text>
+        <CountryInfo onSelectCountry={flyToCountry} />
       </View>
     </View>
   );
