@@ -14,9 +14,9 @@ Work in progress.
 - [x] Area and length calculations with Turf
 - [x] Persist drawings on device
 - [x] Add Graphql Service Layer
-- [ ] Show the user's current location
-- [ ] Run on Android
-- [ ] Upgrade to the latest Expo SDK
+- [x] Show the user's current location
+- [ ] Run on Android (Stretch)
+- [ ] Upgrade to the latest Expo SDK (Stretch)
 
 ## Tech stack
 

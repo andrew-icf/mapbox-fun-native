@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Mapbox, { type Camera } from '@rnmapbox/maps';
 import * as turf from '@turf/turf';
+import * as Location from 'expo-location';
 import type { Feature, FeatureCollection, LineString, Polygon, Position } from 'geojson';
 import CountryInfo, { type Country } from './CountryInfo';
 
@@ -20,6 +21,30 @@ export default function DrawMap() {
   const [drawings, setDrawings] = useState<Drawing[]>([]);
   const [loaded, setLoaded] = useState(false);
   const cameraRef = useRef<Camera>(null);
+  const [hasLocation, setHasLocation] = useState(false);
+
+  // Ask for location permission once on mount
+  useEffect(() => {
+    Location.requestForegroundPermissionsAsync().then(({ status }) => {
+      const granted = status === 'granted';
+      setHasLocation(granted);
+      if (granted) flyToMe();
+    });
+  }, []);
+
+  const flyToMe = async () => {
+    try {
+      const { coords } = await Location.getCurrentPositionAsync({});
+      cameraRef.current?.setCamera({
+        centerCoordinate: [coords.longitude, coords.latitude],
+        zoomLevel: 14,
+        animationDuration: 1500,
+        animationMode: 'flyTo',
+      });
+    } catch (error) {
+      console.warn('Could not get location', error);
+    }
+  };
 
   const flyToCountry = (country: Country) => {
     cameraRef.current?.setCamera({
@@ -105,6 +130,7 @@ export default function DrawMap() {
           ref={cameraRef}
           defaultSettings={{ zoomLevel: 12, centerCoordinate: [-104.99, 39.74] }}
         />
+        {hasLocation && <Mapbox.LocationPuck />}
         <Mapbox.ShapeSource id="drawings" shape={shape}>
           <Mapbox.FillLayer
             id="drawings-fill"
@@ -135,6 +161,7 @@ export default function DrawMap() {
         <ToolbarButton label="Undo" disabled={points.length === 0} onPress={undoPoint} />
         <ToolbarButton label="Finish" disabled={!canFinish} onPress={finishShape} />
         <ToolbarButton label="Clear" onPress={clearAll} />
+        <ToolbarButton label="Me" disabled={!hasLocation} onPress={flyToMe} />
       </View>
 
       <View style={styles.panel}>
