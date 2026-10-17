@@ -7,9 +7,7 @@ import * as Location from 'expo-location';
 import type { Feature, FeatureCollection, LineString, Polygon, Position } from 'geojson';
 import CountryInfo, { type Country } from './CountryInfo';
 
-type DrawMode = 'line' | 'polygon';
-type DrawingProps = { lineColor: string; fillColor: string };
-type Drawing = Feature<LineString | Polygon, DrawingProps>;
+import { computeTotals, createDrawing, minPointsFor, type Drawing, type DrawingProps, type DrawMode } from '../utils/drawing';
 
 const COLORS: DrawingProps = { lineColor: '#2563eb', fillColor: '#2563eb' };
 const PREVIEW_COLOR = '#f97316';
@@ -74,8 +72,7 @@ export default function DrawMap() {
   save.catch((error) => console.warn('Failed to save drawings', error));
   }, [drawings, loaded]);
 
-  const minPoints = mode === 'line' ? 2 : 3;
-  const canFinish = points.length >= minPoints;
+  const canFinish = points.length >= minPointsFor(mode);
 
   // Each tap on the map adds a point to the shape in progress
   const handleMapPress = (feature: Feature) => {
@@ -90,11 +87,8 @@ export default function DrawMap() {
   };
 
   const finishShape = () => {
-    if (!canFinish) return;
-    const drawing: Drawing =
-      mode === 'line'
-        ? turf.lineString(points, COLORS)
-        : turf.polygon([[...points, points[0]]], COLORS); // polygons must close the ring
+    const drawing = createDrawing(mode, points, COLORS);
+    if (!drawing) return;
     setDrawings((prev) => [...prev, drawing]);
     setPoints([]);
   };
@@ -115,13 +109,7 @@ export default function DrawMap() {
   }, [drawings, points]);
 
   // Measurements, carried over from the web version
-  const totals = useMemo(() => {
-    const polygons = drawings.filter((d) => d.geometry.type === 'Polygon');
-    const lines = drawings.filter((d) => d.geometry.type === 'LineString');
-    const area = turf.area(turf.featureCollection(polygons));
-    const miles = lines.reduce((sum, l) => sum + turf.length(l, { units: 'miles' }), 0);
-    return { area, miles };
-  }, [drawings]);
+  const totals = useMemo(() => computeTotals(drawings), [drawings]);
 
   return (
     <View style={styles.container}>
@@ -170,7 +158,7 @@ export default function DrawMap() {
             ? `Tap to add points (${points.length} so far)`
             : `Tap the map to start a ${mode}`}
         </Text>
-        <Text style={styles.panelValue}>{(totals.area / 2_589_988).toFixed(2)} sq miles</Text>
+        <Text style={styles.panelValue}>{totals.sqMiles.toFixed(2)} sq miles</Text>
         <Text style={styles.panelValue}>{totals.miles.toFixed(2)} miles of lines</Text>
         <CountryInfo onSelectCountry={flyToCountry} />
       </View>
