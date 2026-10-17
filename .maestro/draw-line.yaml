@@ -1,0 +1,14 @@
+appId: com.andrewvandermeer.mapboxfunnative
+---
+- launchApp
+- tapOn: "Clear"
+- assertVisible: "0.00 miles of lines"
+- tapOn: "Line"
+- tapOn:
+    point: "10%,45%"
+- tapOn:
+    point: "60%,15%"
+- assertVisible: 'Tap to add points \(2 so far\)'
+- tapOn:
+    id: "finish-button"
+- assertNotVisible: "0.00 miles of lines"

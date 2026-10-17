@@ -1,0 +1,15 @@
+appId: com.andrewvandermeer.mapboxfunnative
+---
+- launchApp
+- tapOn: "Clear"
+- assertVisible: "0.00 sq miles"
+- tapOn: "Polygon"
+- tapOn:
+    point: "40%,45%"
+- tapOn:
+    point: "60%,45%"
+- tapOn:
+    point: "50%,60%"
+- assertVisible: 'Tap to add points \(3 so far\)'
+- tapOn: "Finish"
+- assertNotVisible: "0.00 sq miles"

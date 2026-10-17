@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { MockedProvider } from '@apollo/client/testing/react';
-import CountryInfo, { COUNTRIES } from '../../components/CountryInfo';
+import CountryInfo, { COUNTRIES } from '../CountryInfo';
 import { GET_COUNTRY } from '../../graphql/queries';
 
 const mocks = [
