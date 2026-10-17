@@ -147,7 +147,7 @@ export default function DrawMap() {
         <ToolbarButton label="Line" active={mode === 'line'} onPress={() => changeMode('line')} />
         <ToolbarButton label="Polygon" active={mode === 'polygon'} onPress={() => changeMode('polygon')} />
         <ToolbarButton label="Undo" disabled={points.length === 0} onPress={undoPoint} />
-        <ToolbarButton label="Finish" disabled={!canFinish} onPress={finishShape} />
+        <ToolbarButton label="Finish" disabled={!canFinish} testID="finish-button" onPress={finishShape} />
         <ToolbarButton label="Clear" onPress={clearAll} />
         <ToolbarButton label="Me" disabled={!hasLocation} onPress={flyToMe} />
       </View>
@@ -171,11 +171,13 @@ type ToolbarButtonProps = {
   onPress: () => void;
   active?: boolean;
   disabled?: boolean;
+  testID?: string;
 };
 
-function ToolbarButton({ label, onPress, active, disabled }: ToolbarButtonProps) {
+function ToolbarButton({ label, onPress, active, disabled, testID }: ToolbarButtonProps) {
   return (
     <Pressable
+      testID={testID}
       onPress={onPress}
       disabled={disabled}
       style={[styles.button, active && styles.buttonActive, disabled && styles.buttonDisabled]}
