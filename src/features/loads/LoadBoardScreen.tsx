@@ -55,6 +55,13 @@ export default function LoadBoardScreen() {
           ListEmptyComponent={
             <Text style={styles.message}>{searchQuery ? `No loads from "${searchQuery}"` : 'No loads found'}</Text>
           }
+          ListFooterComponent={
+            loads?.length ? (
+              <Text testID="load-list-end" style={styles.listEnd}>
+                End of loads
+              </Text>
+            ) : null
+          }
         />
       )}
     </SafeAreaView>
@@ -96,4 +103,5 @@ const styles = StyleSheet.create({
   message: { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xl },
   listContent: { padding: spacing.md },
   separator: { height: spacing.md },
+  listEnd: { color: colors.textSecondary, textAlign: 'center', fontSize: 12, marginTop: spacing.md },
 });
