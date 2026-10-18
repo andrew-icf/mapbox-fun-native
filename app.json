@@ -41,7 +41,9 @@
         {
           "locationWhenInUsePermission": "Show your location on the map."
         }
-      ]
+      ],
+      "expo-font",
+      "expo-asset"
     ]
   }
 }
