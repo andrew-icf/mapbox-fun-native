@@ -1,0 +1,34 @@
+appId: com.andrewvandermeer.mapboxfunnative
+tags:
+  - smoke
+env:
+  SEARCH_CITY: Chicago
+---
+- launchApp
+- tapOn:
+    id: "tab-load-board"
+- assertVisible: "Recommended Loads"
+- assertVisible:
+    id: "load-card-.*"
+
+# Scroll to the end of the list, whatever the last load is
+- scrollUntilVisible:
+    element:
+      id: "load-list-end"
+    direction: DOWN
+
+# Search, then confirm at least one card starts in that city
+- tapOn:
+    id: "origin-search"
+- inputText: ${SEARCH_CITY}
+- hideKeyboard
+- assertVisible: "Search Origin: ${SEARCH_CITY}"
+- assertVisible: "${SEARCH_CITY}, .*"
+
+# A search that can't match anything shows the empty state
+- tapOn:
+    id: "origin-search"
+- eraseText: 20
+- inputText: "zzz"
+- hideKeyboard
+- assertVisible: 'No loads from "zzz"'

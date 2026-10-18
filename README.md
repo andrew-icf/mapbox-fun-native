@@ -15,6 +15,8 @@ Work in progress.
 - [x] Persist drawings on device
 - [x] Add Graphql Service Layer
 - [x] Show the user's current location
+- [x] Add testing Unit (Jest), Component (React Native Testing Library) and E2E (Maestro)
+- [x] Build out load board with bottom navigation (Stretch)
 - [ ] Run on Android (Stretch)
 - [ ] Upgrade to the latest Expo SDK (Stretch)
 

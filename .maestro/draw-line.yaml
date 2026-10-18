@@ -1,6 +1,10 @@
 appId: com.andrewvandermeer.mapboxfunnative
+tags:
+  - smoke
 ---
 - launchApp
+- tapOn:
+    id: "tab-map"
 - tapOn: "Clear"
 - assertVisible: "0.00 miles of lines"
 - tapOn: "Line"
