@@ -38,5 +38,6 @@ describe('LoadBoardScreen search', () => {
     await fireEvent.changeText(screen.getByTestId('origin-search'), 'zzz');
 
     expect(await screen.findByText('No loads from "zzz"')).toBeOnTheScreen();
+    expect(screen.queryByTestId('load-list-end')).not.toBeOnTheScreen();
   });
 });
