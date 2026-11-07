@@ -11,9 +11,9 @@ tags:
 - tapOn:
     point: "40%,45%"
 - tapOn:
-    point: "60%,45%"
+    point: "50%,45%"
 - tapOn:
-    point: "50%,60%"
-- assertVisible: 'Tap to add points \(3 so far\)'
+    point: "50%,55%"
+- assertVisible: 'Tap to add points \(3 so far\)\..*'
 - tapOn: "Finish"
 - assertNotVisible: "0.00 sq miles"
