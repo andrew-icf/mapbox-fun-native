@@ -7,9 +7,9 @@ import * as Location from 'expo-location';
 import type { Feature, FeatureCollection, LineString, Polygon, Position } from 'geojson';
 import CountryInfo, { type Country } from './CountryInfo';
 
-import { computeTotals, createDrawing, minPointsFor, type Drawing, type DrawingProps, type DrawMode } from '../utils/drawing';
+import { computeTotals, createDrawing, minPointsFor, type Drawing, type DrawMode } from '../utils/drawing';
+import { colorName, drawingColors } from '../shared/colors';
 
-const COLORS: DrawingProps = { lineColor: '#2563eb', fillColor: '#2563eb' };
 const PREVIEW_COLOR = '#f97316';
 const STORAGE_KEY = 'user_drawings';
 
@@ -20,6 +20,7 @@ export default function DrawMap() {
   const [loaded, setLoaded] = useState(false);
   const cameraRef = useRef<Camera>(null);
   const [hasLocation, setHasLocation] = useState(false);
+  const [selectedColor, setSelectedColor] = useState<string>(drawingColors[0].hex);
 
   // Ask for location permission once on mount
   useEffect(() => {
@@ -53,14 +54,25 @@ export default function DrawMap() {
     });
   };
 
-  // Load saved drawings once when the component mounts
+  // Load saved drawings once when the component mounts. The cancelled flag
+  // guards against a result that arrives after unmount (e.g. a fast
+  // remount in tests) setting state on a component that's no longer there.
   useEffect(() => {
-  AsyncStorage.getItem(STORAGE_KEY)
+    let cancelled = false;
+    AsyncStorage.getItem(STORAGE_KEY)
       .then((saved) => {
-      if (saved) setDrawings(JSON.parse(saved));
-     })
-      .catch((error) => console.warn('Failed to load drawings', error))
-      .finally(() => setLoaded(true));
+        if (cancelled) return;
+        if (saved) setDrawings(JSON.parse(saved));
+      })
+      .catch((error) => {
+        if (!cancelled) console.warn('Failed to load drawings', error);
+      })
+      .finally(() => {
+        if (!cancelled) setLoaded(true);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Save whenever drawings change, but only after the initial load
@@ -87,7 +99,7 @@ export default function DrawMap() {
   };
 
   const finishShape = () => {
-    const drawing = createDrawing(mode, points, COLORS);
+    const drawing = createDrawing(mode, points, { lineColor: selectedColor, fillColor: selectedColor });
     if (!drawing) return;
     setDrawings((prev) => [...prev, drawing]);
     setPoints([]);
@@ -143,21 +155,37 @@ export default function DrawMap() {
         </Mapbox.ShapeSource>
       </Mapbox.MapView>
 
-      <View style={styles.toolbar} pointerEvents="box-none">
-        <ToolbarButton label="Line" active={mode === 'line'} onPress={() => changeMode('line')} />
-        <ToolbarButton label="Polygon" active={mode === 'polygon'} onPress={() => changeMode('polygon')} />
-        <ToolbarButton label="Undo" disabled={points.length === 0} onPress={undoPoint} />
-        <ToolbarButton label="Finish" disabled={!canFinish} testID="finish-button" onPress={finishShape} />
-        <ToolbarButton label="Clear" onPress={clearAll} />
-        <ToolbarButton label="Me" disabled={!hasLocation} onPress={flyToMe} />
+      <View style={styles.controls} pointerEvents="box-none">
+        <View style={styles.toolbar} pointerEvents="box-none">
+          <ToolbarButton label="Line" active={mode === 'line'} onPress={() => changeMode('line')} />
+          <ToolbarButton label="Polygon" active={mode === 'polygon'} onPress={() => changeMode('polygon')} />
+          <ToolbarButton label="Undo" disabled={points.length === 0} onPress={undoPoint} />
+          <ToolbarButton label="Finish" disabled={!canFinish} testID="finish-button" onPress={finishShape} />
+          <ToolbarButton label="Clear" onPress={clearAll} />
+          <ToolbarButton label="Me" disabled={!hasLocation} onPress={flyToMe} />
+        </View>
+
+        <View style={styles.palette} pointerEvents="box-none">
+          {drawingColors.map(({ hex }) => (
+            <PaletteSwatch
+              key={hex}
+              color={hex}
+              selected={hex === selectedColor}
+              onPress={() => setSelectedColor(hex)}
+            />
+          ))}
+        </View>
       </View>
 
       <View style={styles.panel}>
-        <Text style={styles.panelText}>
-          {points.length > 0
-            ? `Tap to add points (${points.length} so far)`
-            : `Tap the map to start a ${mode}`}
-        </Text>
+        <View style={styles.panelRow}>
+          <Text style={styles.panelText}>
+            {points.length > 0
+              ? `Tap to add points (${points.length} so far). Saves in ${colorName(selectedColor)}`
+              : `Tap the map to start a ${mode}. Saves in ${colorName(selectedColor)}`}
+          </Text>
+          <View testID="pending-color-swatch" style={[styles.hintSwatch, { backgroundColor: selectedColor }]} />
+        </View>
         <Text style={styles.panelValue}>{totals.sqMiles.toFixed(2)} sq miles</Text>
         <Text style={styles.panelValue}>{totals.miles.toFixed(2)} miles of lines</Text>
         <CountryInfo onSelectCountry={flyToCountry} />
@@ -187,14 +215,30 @@ function ToolbarButton({ label, onPress, active, disabled, testID }: ToolbarButt
   );
 }
 
+type PaletteSwatchProps = { color: string; selected: boolean; onPress: () => void };
+
+function PaletteSwatch({ color, selected, onPress }: PaletteSwatchProps) {
+  return (
+    <Pressable
+      testID={`color-swatch-${color.replace('#', '')}`}
+      accessibilityRole="button"
+      accessibilityState={{ selected }}
+      onPress={onPress}
+      style={[styles.swatch, { backgroundColor: color }, selected && styles.swatchSelected]}
+    />
+  );
+}
+
 const styles = StyleSheet.create({
   container: { flex: 1 },
   map: { flex: 1 },
-  toolbar: {
+  controls: {
     position: 'absolute',
     top: 70,
     left: 12,
     right: 12,
+  },
+  toolbar: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
@@ -213,6 +257,23 @@ const styles = StyleSheet.create({
   buttonDisabled: { opacity: 0.4 },
   buttonText: { fontSize: 14, fontWeight: '600', color: '#1f2937' },
   buttonTextActive: { color: '#ffffff' },
+  palette: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 10,
+  },
+  swatch: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    shadowColor: '#000000',
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  swatchSelected: { borderColor: '#ffffff' },
   panel: {
     position: 'absolute',
     bottom: 40,
@@ -222,6 +283,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 14,
   },
-  panelText: { fontSize: 13, color: '#4b5563', marginBottom: 6 },
+  panelRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  panelText: { flex: 1, fontSize: 13, color: '#4b5563', marginBottom: 6 },
   panelValue: { fontSize: 16, fontWeight: '600', color: '#111827' },
+  hintSwatch: { width: 14, height: 14, borderRadius: 7, marginBottom: 6 },
 });

@@ -9,10 +9,10 @@ tags:
 - assertVisible: "0.00 miles of lines"
 - tapOn: "Line"
 - tapOn:
-    point: "10%,45%"
+    point: "20%,45%"
 - tapOn:
-    point: "60%,15%"
-- assertVisible: 'Tap to add points \(2 so far\)'
+    point: "30%,25%"
+- assertVisible: 'Tap to add points \(2 so far\)\..*'
 - tapOn:
     id: "finish-button"
 - assertNotVisible: "0.00 miles of lines"
