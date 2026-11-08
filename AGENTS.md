@@ -90,7 +90,7 @@ Three layers:
    - A real Apollo client over the local schema for integration tests, with **a fresh client per test** so cached results can't leak.
    - Build fixtures with `makeLoad(overrides)`, overriding only the fields under test.
    - `AppTabs.test.tsx` mocks both screens, so it tests navigation without Mapbox or GraphQL.
-3. **End-to-end (Maestro, `.maestro/*.yaml`):** data-independent flows targeting testIDs (`tab-map`, `tab-load-board`, `origin-search`, `load-list`, `load-card-<id>`, `finish-button`, `load-list-end`). **Preserve these testIDs when editing components.**
+3. **End-to-end (Maestro, `.maestro/*.yaml`):** data-independent flows targeting testIDs (`tab-map`, `tab-load-board`, `origin-search`, `load-list`, `load-card-<id>`, `finish-button`, `load-list-end`, `color-swatch-<hex>`, `pending-color-swatch`). **Preserve these testIDs when editing components.**
 
 `jest.setup.js` mocks only `react-native-safe-area-context`.
 
@@ -103,7 +103,7 @@ Three layers:
   - Asserting a mock returns what the test told it to return
 - Don't unit test pure styling (colors, padding, fonts). If a style reflects state, like disabled or active, test the state instead.
 - Don't rely on snapshot tests as the only assertion.
-- React Native Testing Library v14: `render`, `renderHook`, and `fireEvent` are async, so always `await` them.
+- React Native Testing Library v14: `render`, `renderHook`, `unmount` and `fireEvent` are async, so always `await` them.
 - A flaky test is a failing test. Never fix it with retries or longer timeouts. Isolate the root cause and fix it:
   - Timing: use fake timers, `waitFor`, or `findBy` queries instead of fixed delays.
   - Async: `await` every async call and render, and wrap state updates in `act`.
