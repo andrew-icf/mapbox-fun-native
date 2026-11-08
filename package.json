@@ -9,6 +9,7 @@
     "web": "expo start --web",
     "test": "TZ=America/Denver jest",
     "test:e2e": "maestro test .maestro/",
+    "test:hooks": "bash scripts/hooks.test.sh",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit"
   },
