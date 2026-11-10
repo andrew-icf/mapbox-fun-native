@@ -17,7 +17,21 @@
     "preset": "jest-expo",
     "setupFiles": [
       "./jest.setup.js"
-    ]
+    ],
+    "collectCoverageFrom": [
+      "src/**/*.{ts,tsx}",
+      "!src/**/__tests__/**",
+      "!src/**/*.test.{ts,tsx}",
+      "!src/test/**"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "statements": 88,
+        "branches": 87,
+        "functions": 87,
+        "lines": 92
+      }
+    }
   },
   "dependencies": {
     "@apollo/client": "^4.3.3",
