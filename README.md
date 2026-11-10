@@ -21,7 +21,7 @@ The goal is to get hands-on with modern React Native and learn, in practice, wha
 - [x] GraphQL with Apollo Client (public API and local schema)
 - [x] Load board with RxJS search
 - [x] Unit, component, and end-to-end tests
-- [ ] Color palette for drawings
+- [x] Color palette for drawings
 - [ ] Run on Android
 - [ ] Upgrade to the latest Expo SDK
 
@@ -98,7 +98,7 @@ Tests run with `TZ=America/Denver` so date formatting tests catch time-zone bugs
 ### Prerequisites
 
 - macOS with Xcode 16.1+ and an iOS simulator runtime
-- Node.js 20+ and CocoaPods
+- Node.js 22+ and CocoaPods
 - A free [Mapbox](https://www.mapbox.com) account and public access token
 - For end-to-end tests: Java 17+ and the [Maestro](https://maestro.mobile.dev) CLI
 
@@ -124,3 +124,80 @@ npx expo run:ios
 ```
 
 The first build takes several minutes. After that, TypeScript changes update instantly with fast refresh. Changes to `.env` need a Metro restart (`npx expo start --clear`), and changes to `app.json` or native dependencies need a rebuild.
+
+## Working with AI agents
+
+This repo is set up for AI coding agents, mainly [Claude Code](https://claude.com/claude-code). The setup has four layers, each stricter than the last:
+
+| Layer | Job | Where |
+|---|---|---|
+| **Rules** | Guide the agent: architecture, conventions, testing rules | [`AGENTS.md`](AGENTS.md), [`CLAUDE.md`](CLAUDE.md) |
+| **Skills** | Make the right workflow repeatable | [`.claude/skills/`](.claude/skills) |
+| **Hooks** | Enforce what must never break, on every edit | [`.claude/hooks/`](.claude/hooks), [`.claude/settings.json`](.claude/settings.json) |
+| **CI** | Gate every pull request | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) |
+
+Rules are advisory, skills have to be invoked, and hooks only run in Claude Code. CI is the backstop that catches what gets past the other three.
+
+### Setup
+
+- **Claude Code** loads [`CLAUDE.md`](CLAUDE.md) automatically. It imports `AGENTS.md` and adds Claude-specific notes.
+- **Other AI tools** (Codex, Cursor, Copilot, and others) read [`AGENTS.md`](AGENTS.md) directly.
+
+No extra setup is needed. Open the repo in Claude Code and the rules, skills, and hooks are active.
+
+### Rules
+
+[`AGENTS.md`](AGENTS.md) is the single source of truth for how code is written here. `CLAUDE.md` only adds what's specific to Claude Code.
+
+When the agent repeats a mistake, don't just correct it in chat. Add the rule to `AGENTS.md` so every future session, and every tool, picks it up.
+
+### Skills
+
+Run a skill in Claude Code by typing its name:
+
+| Skill | Use it when |
+|---|---|
+| [`/add-feature`](.claude/skills/add-feature/SKILL.md) | Building a new feature: branch, plan, checkpointed implementation with tests, manual verification |
+| [`/review-changes`](.claude/skills/review-changes/SKILL.md) | Before committing: reviews the diff or branch against `AGENTS.md`. Reports only, never edits |
+| [`/fix-flaky-test`](.claude/skills/fix-flaky-test/SKILL.md) | A test passes or fails intermittently: finds the root cause, never adds retries or longer timeouts |
+
+### Hooks
+
+Claude Code runs these automatically ([config](.claude/settings.json)):
+
+- **[protect-files](.claude/hooks/protect-files.js)** (before every edit): blocks edits to `.env` files (except `.env.example`) and to the generated `ios/` and `android/` folders.
+- **[lint-edited-file](.claude/hooks/lint-edited-file.js)** (after every edit): runs ESLint on the edited `.ts`, `.tsx`, `.js`, or `.jsx` file. Errors go back to the agent to fix. Warnings don't block.
+
+The hooks have their own tests, which also run in CI:
+
+```bash
+npm run test:hooks
+```
+
+### CI
+
+[`ci.yml`](.github/workflows/ci.yml) runs on every pull request and on every push to `main`:
+
+```bash
+npm ci
+npm run lint
+npm run typecheck
+npm test -- --coverage
+npm run test:hooks
+```
+
+- **Coverage floor:** `coverageThreshold` in [`package.json`](package.json) fails the run if coverage drops below the floor. Raise it when coverage goes up. Never lower it to get a PR through.
+- **Branch protection:** a ruleset on `main` requires a pull request and a passing `test` check before merging, blocks force pushes, and prevents deleting the branch. No approving review is required because this is a solo repo. On a team, we'd also require at least one approval.
+- **Maestro runs locally, not in CI.** The end-to-end flows need a macOS runner, an iOS simulator, and a development build. Run them before merging UI changes: `npm run test:e2e`.
+
+### How we work
+
+1. **Plan first.** For anything bigger than a one-line change, the agent works in plan mode and proposes a plan before touching code.
+2. **Review the plan before any code.** Push back on scope, approach, and tests now, when changes are cheap.
+3. **Work in checkpoints.** The agent implements in small steps, runs lint, typecheck, and tests, explains what changed, and stops for review.
+4. **Review every diff.** Read agent-written code the way you'd read a teammate's PR. `/review-changes` is a second opinion, not a replacement.
+5. **A human reviews and merges every PR.** The agent can commit, push, and open PRs when asked.
+
+### Improving the setup
+
+Rules, skills, and hooks are code. Change them through a pull request, like anything else, and CI runs the hook tests on every PR. If a skill or rule keeps producing the wrong result, fix the file instead of working around it in chat.
